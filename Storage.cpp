@@ -12,7 +12,7 @@ class Perish;
 class Date;
 enum class Category;
 class Storage;
-
+Date convertToDate(int);
 /////////////////////////////////////////////////////////////////////////////////////
 // Temporary Date class to remove Errors
 // REMOVE LATER
@@ -89,11 +89,14 @@ int operator-(Date d1, Date d2)
 {
     return d1.convertToDays() - d2.convertToDays();
 }
+
 Date operator+(Date d, int n)
 {
     Date d3;
+    d3 = convertToDate(d.convertToDays() + n);
     return d3;
 }
+
 Date convertToDate(int days)
 {
     Date d;
@@ -484,11 +487,14 @@ public:
 
 int main()
 {
-    // Seed rng Generator with system Clock and discard first value
-    std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    std::rand();
+    // // Seed rng Generator with system Clock and discard first value
+    // std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    // std::rand();
 
-    driver.Inventory();
-    std::cout << "___________________________________________\n";
-    driver.manageProfits();
+    // driver.Inventory();
+    // std::cout << "___________________________________________\n";
+    // driver.manageProfits();
+    Date d(1,1,2023);
+    Date d3 = d + 365;
+    d3.display();
 }
