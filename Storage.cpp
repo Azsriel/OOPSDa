@@ -11,11 +11,44 @@ class Items;
 class Perish;
 class Date;
 enum class Category;
-class Storage;
-Date convertToDate(int);
+class Date
+{
+    int day;
+    int month;
+    int year;
+
+public:
+    Date(int, int, int);
+    Date();
+    int isLeapYear();
+    long long int convertToDays();
+    void display();
+};
+
+class Storage
+{
+    std::vector<Items> items;
+    std::vector<Perish> perish;
+    std::vector<int> sales;
+    int currentSales = 0;
+    Date currentDate;
+    friend Items;
+    friend Perish;
+public:
+    void AddItems(Category category, std::string name, int price, bool Perishable);
+    Storage();
+    Items *FindObject(std::string key);
+    std::vector<Items> retrieveItems(Category cat);
+    void makeTable(std::vector<Items> vec);
+    void makeTable(std::vector<Perish> vec);
+    void makeTable(std::vector<int> vec);
+    void Inventory();
+    void handleRestock();
+    void manageProfits();
+    void manageRot();
+    bool moveOntoNextDay();
+}driver;
 /////////////////////////////////////////////////////////////////////////////////////
-// Temporary Date class to remove Errors
-// REMOVE LATER
 class Date
 {
     int day;
@@ -147,8 +180,6 @@ Date convertToDate(int days)
     return d;
 }
 
-// Temporary items and Perish Classes to remove Errors
-// REMOVE LATER
 class Items
 {
 protected:
@@ -167,7 +198,9 @@ public:
     }
     void Restock(int quantity)
     {
-        Quantity += 500;
+        Quantity += quantity;
+        int cost = quantity * price;
+        driver.sales[driver.currentSales] -= cost;
     }
     friend Storage;
 };
@@ -262,7 +295,10 @@ class Storage
     std::vector<Perish> perish;
 
     // Vector for storing all Sales with <int>Category serving as index
-    std::vector<int> sales;
+    std::vector<int> sales = {0};
+
+    // for storing the current index of sales
+    int currentSales = 0;
 
     // Current Date
     Date currentDate;
@@ -409,6 +445,7 @@ public:
 
     void Inventory()
     {
+        // function to print out categorywise profits
         for (int i = 1; i < static_cast<int>(Category::total); ++i)
         {
             std::cout << enumToStr(static_cast<Category>(i)) << std::endl;
@@ -460,14 +497,15 @@ public:
         std::cin >> choice;
         if (choice == 'n')
         {
-            int n = static_cast<int>(Category::total); // Its being used multiple times
-            if (sales[n] < 0)
+            // int n = static_cast<int>(Category::total); // Its being used multiple times --> have added a separate member of class to keep track of current sales index
+            int saleForTheDay = sales[currentSales];
+            if (saleForTheDay < 0)
             {
-                std::cout << "You have made a loss of " << -n << " total.\n";
+                std::cout << "You have made a loss of " << -saleForTheDay << " total.\n";
             }
-            else if (sales[n] > 0)
+            else if (saleForTheDay > 0)
             {
-                std::cout << "You have made a profit of " << n << " total.\n";
+                std::cout << "You have made a profit of " << saleForTheDay << " total.\n";
             }
             else
             {
@@ -477,24 +515,23 @@ public:
         }
         else if (choice == 'y')
         {
-            currentDate + 1;
-
+            // currentDate + 1; -> this won't update the value of currentDate
+            currentDate = currentDate + 1;
+            currentSales++;
+            // setting up sales for the next day
+            sales.push_back(0);
             manageRot();
         }
     }
-
-} driver;
+};
 
 int main()
 {
     // // Seed rng Generator with system Clock and discard first value
-    // std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    // std::rand();
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    std::rand();
 
-    // driver.Inventory();
-    // std::cout << "___________________________________________\n";
-    // driver.manageProfits();
-    Date d(1,1,2023);
-    Date d3 = d + 365;
-    d3.display();
+    driver.Inventory();
+    std::cout << "___________________________________________\n";
+    driver.manageProfits();
 }
