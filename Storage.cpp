@@ -33,11 +33,11 @@ class Storage
     std::vector<Perish> perish;
     std::vector<int> sales;
     int currentSales = 0;
-    Date currentDate;
     friend Items;
     friend Perish;
 
 public:
+    Date currentDate;
     void AddItems(Category category, std::string name, int price, bool Perishable);
     Storage();
     Items *FindObject(std::string key);
@@ -195,7 +195,6 @@ public:
     }
     friend Storage;
 };
-
 class Perish : public Items
 {
     int Lifetime;
@@ -235,6 +234,9 @@ public:
             }
         }
         return {perished, rottingTomorrow};
+    }
+    void display(){
+        std::cout<<Name<<std::endl;
     }
     friend Storage;
 };
@@ -311,7 +313,7 @@ void Storage::AddItems(Category category, std::string name, int price, bool Peri
     }
     else
     {
-        perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 10, currentDate));
+        perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 2, currentDate));
     }
 }
 Storage::Storage()
@@ -477,16 +479,19 @@ void Storage::manageRot()
 {
     int perished = 0;
     int rottingTomorrow = 0;
-    for (auto i : perish)
+
+    for (int i = 0; i<perish.size(); i++)
     {
-        perished += i.updateRot().first;
-        rottingTomorrow += i.updateRot().second;
+        perished += perish[i].updateRot().first;
+        rottingTomorrow += perish[i].updateRot().second;
     }
-    if(perished){
-        std::cout<<"Number of units perished today: "<<perished<<std::endl;
+    if (perished)
+    {
+        std::cout << "Number of units perished today: " << perished << std::endl;
     }
-    if(rottingTomorrow){
-        std::cout<<"Number of units perishing tomorrow: "<<rottingTomorrow<<std::endl;
+    if (rottingTomorrow)
+    {
+        std::cout << "Number of units perishing tomorrow: " << rottingTomorrow << std::endl;
     }
 }
 bool Storage::moveOntoNextDay()
@@ -530,8 +535,20 @@ int main()
     // // Seed rng Generator with system Clock and discard first value
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     std::rand();
-
     driver.Inventory();
     std::cout << "___________________________________________\n";
     driver.manageProfits();
+    // make date private again
+    driver.moveOntoNextDay();
+    driver.Inventory();
+    driver.currentDate.display();
+    driver.moveOntoNextDay();
+    driver.Inventory();
+    driver.currentDate.display();
+    driver.moveOntoNextDay();
+    driver.Inventory();
+    driver.currentDate.display();
+    driver.moveOntoNextDay();
+    driver.Inventory();
+    driver.currentDate.display();
 }
