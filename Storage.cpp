@@ -23,8 +23,10 @@ public:
     int isLeapYear();
     long long int convertToDays();
     void display();
+    friend Date convertToDate(int);
+    friend Date operator+(Date, int);
 };
-
+Date convertToDate(int);
 class Storage
 {
     std::vector<Items> items;
@@ -34,6 +36,7 @@ class Storage
     Date currentDate;
     friend Items;
     friend Perish;
+
 public:
     void AddItems(Category category, std::string name, int price, bool Perishable);
     Storage();
@@ -47,89 +50,77 @@ public:
     void manageProfits();
     void manageRot();
     bool moveOntoNextDay();
-}driver;
+} driver;
 /////////////////////////////////////////////////////////////////////////////////////
-class Date
+
+//<-------------- Complete declaration of Date and related functions -------------------->
+Date::Date(int a, int b, int c)
 {
-    int day;
-    int month;
-    int year;
-
-public:
-    Date(int a, int b, int c)
+    day = a;
+    month = b;
+    year = c;
+}
+Date::Date()
+{
+    day = 0;
+    month = 0;
+    year = 0;
+}
+int Date::isLeapYear()
+{
+    if ((!year % 4 && year % 100) || year % 400)
     {
-        day = a;
-        month = b;
-        year = c;
+        return (1);
     }
-    Date()
+    else
     {
-        day = 0;
-        month = 0;
-        year = 0;
+        return (0);
     }
-    int isLeapYear()
+}
+long long int Date::convertToDays()
+{
+    int daysInMonth[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+
+    // calculates date upto the given date and then find the difference
+    long long int daysFromDays, daysFromMonths, daysFromYears, totalDays;
+    daysFromMonths = 0;
+    daysFromYears = 0;
+    daysFromDays = day;
+
+    // determining days due to month
+    if (month == 2 && isLeapYear())
+        daysInMonth[2] = 29;
+    for (int i = 0; i < month; i++)
     {
-        if ((!year % 4 && year % 100) || year % 400)
-        {
-            return (1);
-        }
-        else
-        {
-            return (0);
-        }
+        daysFromMonths += daysInMonth[i];
     }
-    long long int convertToDays()
-    {
-        int daysInMonth[13] = {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-        // calculates date upto the given date and then find the difference
-        long long int daysFromDays, daysFromMonths, daysFromYears, totalDays;
-        daysFromMonths = 0;
-        daysFromYears = 0;
-        daysFromDays = day;
+    // determining days due to years
+    int daysInFourYears = 365 * 3 + 366;
+    int year2 = year;
+    daysFromYears += daysInFourYears * (year2 / 4); // deals with sets of 4 years that have passed
+    // now to deal with leftover non leap years
+    int sets = 4 * (daysFromYears / daysInFourYears);
+    year2 -= sets; // now year2 holds number of non leap years to be accounted for
+    daysFromYears += 365 * year2;
 
-        // determining days due to month
-        if (month == 2 && isLeapYear())
-            daysInMonth[2] = 29;
-        for (int i = 0; i < month; i++)
-        {
-            daysFromMonths += daysInMonth[i];
-        }
-
-        // determining days due to years
-        int daysInFourYears = 365 * 3 + 366;
-        int year2 = year;
-        daysFromYears += daysInFourYears * (year2 / 4); // deals with sets of 4 years that have passed
-        // now to deal with leftover non leap years
-        int sets = 4 * (daysFromYears / daysInFourYears);
-        year2 -= sets; // now year2 holds number of non leap years to be accounted for
-        daysFromYears += 365 * year2;
-
-        totalDays = daysFromDays + daysFromMonths + daysFromYears;
-        return totalDays;
-    }
-    void display()
-    {
-        std::cout << day << "/" << month << "/" << year << std::endl;
-    }
-    // friend int operator-(Date d1, Date d2);
-    friend Date operator+(Date d1, int n);
-    friend Date convertToDate(int);
-};
-
+    totalDays = daysFromDays + daysFromMonths + daysFromYears;
+    return totalDays;
+}
+void Date::display()
+{
+    std::cout << day << "/" << month << "/" << year << std::endl;
+}
 int operator-(Date d1, Date d2)
 {
     return d1.convertToDays() - d2.convertToDays();
 }
-
 Date operator+(Date d, int n)
 {
     Date d3;
     d3 = convertToDate(d.convertToDays() + n);
     return d3;
 }
-
 Date convertToDate(int days)
 {
     Date d;
@@ -179,7 +170,7 @@ Date convertToDate(int days)
     }
     return d;
 }
-
+//<-------------------------- End of declarations --------------------------------------->
 class Items
 {
 protected:
@@ -209,6 +200,8 @@ class Perish : public Items
 {
     int Lifetime;
     std::vector<Date> dateOfManufacture;
+    // batchQuantity[i] holds amount of perishible bought on dateOfManufacture[i]
+    std::vector<int> batchQuantity;
 
 public:
     Perish(Category cat, std::string name, int price, int quantity, int life, Date date)
@@ -216,14 +209,39 @@ public:
     {
         Lifetime = life;
         dateOfManufacture.push_back(date);
+        batchQuantity.push_back(quantity);
     }
-    void Restock(int quantity);
+    void Restock(int quantity)
+    {
+        Quantity += quantity;
+        driver.sales[driver.currentSales] -= quantity * price;
+        batchQuantity.push_back(quantity);
+    }
+    std::pair<int, int> updateRot()
+    {
+        int perished = 0;
+        int rottingTomorrow = 0;
+        for (int i = 0; i < dateOfManufacture.size(); i++)
+        {
+            if (driver.currentDate - dateOfManufacture[i] > Lifetime)
+            {
+                dateOfManufacture.erase(dateOfManufacture.begin() + i);
+                perished += batchQuantity[i];
+                batchQuantity.erase(batchQuantity.begin() + i);
+            }
+            else if (driver.currentDate - dateOfManufacture[i] == Lifetime)
+            {
+                rottingTomorrow += batchQuantity[i];
+            }
+        }
+        return {perished, rottingTomorrow};
+    }
     friend Storage;
 };
 
-// END REMOVE HERE
 /////////////////////////////////////////////////////////////////////////////////////
 
+//<-------------- Complete declaration of Storage and related functions -------------------->
 // Enum for categories
 // Perishables on top, Last entry as total for convenience
 enum class Category
@@ -235,7 +253,6 @@ enum class Category
     households,
     total,
 };
-
 std::string enumToStr(Category cat)
 {
     switch (cat)
@@ -274,256 +291,239 @@ Category strToEnum(std::string cat)
     else
         return Category::total;
 }
-
-// Generates Random number between max and min
-// Assumes std::srand() has already been called
-// assumes max-min <= RAND_MAX
 int getRandomNumber(int min, int max)
 {
+    // Generates Random number between max and min
+    // Assumes std::srand() has already been called
+    // assumes max-min <= RAND_MAX
     static constexpr double fraction{1.0 / (RAND_MAX + 1.0)}; // Static for efficiency
 
     // Evenly distributes random number across the range
     return min + static_cast<int>((max - min + 1) * (std::rand() * fraction));
 }
-
-class Storage
+void Storage::AddItems(Category category, std::string name, int price, bool Perishable)
 {
-    // Vector for storing all objects of Item Class
-    std::vector<Items> items;
-
-    // Vector for storing all objects of Perish Class
-    std::vector<Perish> perish;
-
-    // Vector for storing all Sales with <int>Category serving as index
-    std::vector<int> sales = {0};
-
-    // for storing the current index of sales
-    int currentSales = 0;
-
-    // Current Date
-    Date currentDate;
-
-    // Make the item classes as friends
-    friend Items;
-    friend Perish;
-
-public:
     // Method to Add Item to Vectors
-    void AddItems(Category category, std::string name, int price, bool Perishable)
+
+    if (!Perishable)
     {
-        if (!Perishable)
+        items.push_back(Items(category, name, price, getRandomNumber(30, 50)));
+    }
+    else
+    {
+        perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 10, currentDate));
+    }
+}
+Storage::Storage()
+{
+    currentDate = Date(getRandomNumber(1, 30), getRandomNumber(1, 12), getRandomNumber(2000, 2020));
+    AddItems(Category::consumables, "Apples", 50, true);
+    AddItems(Category::utensils, "Knifes", 150, false);
+    AddItems(Category::entertainment, "Rubber_Balls", 150, false);
+    AddItems(Category::clothes, "Shirts", 150, false);
+    AddItems(Category::households, "Buckets", 150, false);
+    AddItems(Category::consumables, "Tomatoes", 150, true);
+    AddItems(Category::utensils, "Spoons", 150, false);
+    AddItems(Category::entertainment, "Toy_Guns", 150, false);
+    AddItems(Category::clothes, "Pants", 150, false);
+    AddItems(Category::households, "Towels", 150, false);
+    AddItems(Category::consumables, "Carrots", 150, true);
+    AddItems(Category::utensils, "Forks", 150, false);
+    AddItems(Category::entertainment, "Masks", 150, false);
+    AddItems(Category::clothes, "Suits", 150, false);
+    AddItems(Category::households, "Bottles", 150, false);
+
+    sales.resize(static_cast<std::size_t>(Category::total));
+}
+Items *Storage::FindObject(std::string key)
+{
+    // CASE SENSITIVE
+    for (int i = 0; i < items.size(); ++i)
+    {
+        if (items[i].Name == key)
         {
-            items.push_back(Items(category, name, price, getRandomNumber(30, 50)));
+            return &items[i];
+        }
+    }
+    for (int i = 0; i < perish.size(); ++i)
+    {
+        if (perish[i].Name == key)
+        {
+            return &perish[i];
+        }
+    }
+    return NULL;
+}
+std::vector<Items> Storage::retrieveItems(Category cat)
+{
+    std::vector<Items> retrieval;
+    for (int i = 0; i < items.size(); ++i)
+    {
+        if (items[i].cat == cat)
+        {
+            retrieval.push_back(items[i]);
+        }
+    }
+    return retrieval;
+}
+void Storage::makeTable(std::vector<Items> vec)
+{
+    TextTable t('-', '|', '+');
+    t.add("Item");
+    t.add("Quantity");
+    t.add("Price");
+    t.endOfRow();
+
+    for (int i = 0; i < vec.size(); ++i)
+    {
+        t.add(vec[i].Name);
+        t.add(std::to_string(vec[i].Quantity));
+        t.add(std::to_string(vec[i].price));
+        t.endOfRow();
+    }
+    std::cout << t << std::endl;
+}
+void Storage::makeTable(std::vector<Perish> vec)
+{
+
+    std::vector<std::string> warning;
+    TextTable t('-', '|', '+');
+    t.add("Item");
+    t.add("Quantity");
+    t.add("Price");
+    t.add("Lifetime");
+    t.endOfRow();
+
+    for (int i = 0; i < vec.size(); ++i)
+    {
+        t.add(vec[i].Name);
+        t.add(std::to_string(vec[i].Quantity));
+        t.add(std::to_string(vec[i].price));
+        t.add(std::to_string(vec[i].Lifetime));
+        t.endOfRow();
+
+        if (vec[i].Lifetime - (currentDate - (vec[i].dateOfManufacture[0])) < 10)
+        {
+            warning.push_back(vec[i].Name);
+        }
+    }
+
+    std::cout << t << std::endl;
+
+    for (int i = 0; i < warning.size(); ++i)
+    {
+        std::cout << "A Batch of " << warning[i] << " has almost decayed.\n";
+    }
+}
+void Storage::makeTable(std::vector<int> vec)
+{
+    TextTable t('-', '|', '+');
+    t.add("Category");
+    t.add("Sales");
+    t.endOfRow();
+
+    for (int i = 0; i < static_cast<int>(Category::total); ++i)
+    {
+        t.add(enumToStr(static_cast<Category>(i)));
+        t.add(std::to_string(vec[i]));
+        t.endOfRow();
+    }
+    std::cout << t << std::endl;
+}
+void Storage::Inventory()
+{
+    // function to print out categorywise profits
+    for (int i = 1; i < static_cast<int>(Category::total); ++i)
+    {
+        std::cout << enumToStr(static_cast<Category>(i)) << std::endl;
+        makeTable(retrieveItems(static_cast<Category>(i)));
+    }
+    std::cout << enumToStr(Category::consumables) << std::endl;
+    makeTable(perish);
+}
+void Storage::handleRestock()
+{
+    int amount;
+    std::cin >> std::ws >> amount;
+
+    std::cout << "Do you want to restock a full category or only one item?(c/i) ";
+    char choice;
+    std::cin >> choice;
+
+    if (choice == 'i')
+    {
+        std::cout << "Enter Name of object (Case Sensitive): ";
+        std::string key;
+        std::cin >> key >> std::ws;
+        FindObject(key)->Restock(amount);
+    }
+    else if (choice == 'c')
+    {
+        std::cout << "Enter name of Category: ";
+        std::string key;
+        std::cin >> key;
+        std::vector<Items> arr = retrieveItems(strToEnum(key));
+        for (int i = 0; i < arr.size(); ++i)
+        {
+            FindObject(arr[i].Name)->Restock(amount);
+        }
+    }
+}
+void Storage::manageProfits()
+{
+    makeTable(sales);
+}
+void Storage::manageRot()
+{
+    int perished = 0;
+    int rottingTomorrow = 0;
+    for (auto i : perish)
+    {
+        perished += i.updateRot().first;
+        rottingTomorrow += i.updateRot().second;
+    }
+    if(perished){
+        std::cout<<"Number of units perished today: "<<perished<<std::endl;
+    }
+    if(rottingTomorrow){
+        std::cout<<"Number of units perishing tomorrow: "<<rottingTomorrow<<std::endl;
+    }
+}
+bool Storage::moveOntoNextDay()
+{
+    std::cout << "Do you want to continue? (y/n): ";
+    char choice;
+    std::cin >> choice;
+    if (choice == 'n')
+    {
+        // int n = static_cast<int>(Category::total); // Its being used multiple times --> have added a separate member of class to keep track of current sales index
+        int saleForTheDay = sales[currentSales];
+        if (saleForTheDay < 0)
+        {
+            std::cout << "You have made a loss of " << -saleForTheDay << " total.\n";
+        }
+        else if (saleForTheDay > 0)
+        {
+            std::cout << "You have made a profit of " << saleForTheDay << " total.\n";
         }
         else
         {
-            perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 10, currentDate));
+            std::cout << "Congratulations!! You have gotten absolutely nothing!!\n";
         }
+        return false;
     }
-
-    // Constructor
-    Storage()
+    else if (choice == 'y')
     {
-        currentDate = Date(getRandomNumber(1, 30), getRandomNumber(1, 12), getRandomNumber(2000, 2020));
-        AddItems(Category::consumables, "Apples", 50, true);
-        AddItems(Category::utensils, "Knifes", 150, false);
-        AddItems(Category::entertainment, "Rubber_Balls", 150, false);
-        AddItems(Category::clothes, "Shirts", 150, false);
-        AddItems(Category::households, "Buckets", 150, false);
-        AddItems(Category::consumables, "Tomatoes", 150, true);
-        AddItems(Category::utensils, "Spoons", 150, false);
-        AddItems(Category::entertainment, "Toy_Guns", 150, false);
-        AddItems(Category::clothes, "Pants", 150, false);
-        AddItems(Category::households, "Towels", 150, false);
-        AddItems(Category::consumables, "Carrots", 150, true);
-        AddItems(Category::utensils, "Forks", 150, false);
-        AddItems(Category::entertainment, "Masks", 150, false);
-        AddItems(Category::clothes, "Suits", 150, false);
-        AddItems(Category::households, "Bottles", 150, false);
-
-        sales.resize(static_cast<std::size_t>(Category::total));
+        // currentDate + 1; -> this won't update the value of currentDate
+        currentDate = currentDate + 1;
+        currentSales++;
+        // setting up sales for the next day
+        sales.push_back(0);
+        manageRot();
     }
+}
 
-    // CASE SENSITIVE
-    Items *FindObject(std::string key)
-    {
-        for (int i = 0; i < items.size(); ++i)
-        {
-            if (items[i].Name == key)
-            {
-                return &items[i];
-            }
-        }
-        for (int i = 0; i < perish.size(); ++i)
-        {
-            if (perish[i].Name == key)
-            {
-                return &perish[i];
-            }
-        }
-        return NULL;
-    }
-
-    std::vector<Items> retrieveItems(Category cat)
-    {
-        std::vector<Items> retrieval;
-        for (int i = 0; i < items.size(); ++i)
-        {
-            if (items[i].cat == cat)
-            {
-                retrieval.push_back(items[i]);
-            }
-        }
-        return retrieval;
-    }
-
-    void makeTable(std::vector<Items> vec)
-    {
-        TextTable t('-', '|', '+');
-        t.add("Item");
-        t.add("Quantity");
-        t.add("Price");
-        t.endOfRow();
-
-        for (int i = 0; i < vec.size(); ++i)
-        {
-            t.add(vec[i].Name);
-            t.add(std::to_string(vec[i].Quantity));
-            t.add(std::to_string(vec[i].price));
-            t.endOfRow();
-        }
-        std::cout << t << std::endl;
-    }
-
-    void makeTable(std::vector<Perish> vec)
-    {
-
-        std::vector<std::string> warning;
-        TextTable t('-', '|', '+');
-        t.add("Item");
-        t.add("Quantity");
-        t.add("Price");
-        t.add("Lifetime");
-        t.endOfRow();
-
-        for (int i = 0; i < vec.size(); ++i)
-        {
-            t.add(vec[i].Name);
-            t.add(std::to_string(vec[i].Quantity));
-            t.add(std::to_string(vec[i].price));
-            t.add(std::to_string(vec[i].Lifetime));
-            t.endOfRow();
-
-            if (vec[i].Lifetime - (currentDate - (vec[i].dateOfManufacture[0])) < 10)
-            {
-                warning.push_back(vec[i].Name);
-            }
-        }
-
-        std::cout << t << std::endl;
-
-        for (int i = 0; i < warning.size(); ++i)
-        {
-            std::cout << "A Batch of " << warning[i] << " has almost decayed.\n";
-        }
-    }
-    void makeTable(std::vector<int> vec)
-    {
-        TextTable t('-', '|', '+');
-        t.add("Category");
-        t.add("Sales");
-        t.endOfRow();
-
-        for (int i = 0; i < static_cast<int>(Category::total); ++i)
-        {
-            t.add(enumToStr(static_cast<Category>(i)));
-            t.add(std::to_string(vec[i]));
-            t.endOfRow();
-        }
-        std::cout << t << std::endl;
-    }
-
-    void Inventory()
-    {
-        // function to print out categorywise profits
-        for (int i = 1; i < static_cast<int>(Category::total); ++i)
-        {
-            std::cout << enumToStr(static_cast<Category>(i)) << std::endl;
-            makeTable(retrieveItems(static_cast<Category>(i)));
-        }
-        std::cout << enumToStr(Category::consumables) << std::endl;
-        makeTable(perish);
-    }
-
-    void handleRestock()
-    {
-        int amount;
-        std::cin >> std::ws >> amount;
-
-        std::cout << "Do you want to restock a full category or only one item?(c/i) ";
-        char choice;
-        std::cin >> choice;
-
-        if (choice == 'i')
-        {
-            std::cout << "Enter Name of object (Case Sensitive): ";
-            std::string key;
-            std::cin >> key >> std::ws;
-            FindObject(key)->Restock(amount);
-        }
-        else if (choice == 'c')
-        {
-            std::cout << "Enter name of Category: ";
-            std::string key;
-            std::cin >> key;
-            std::vector<Items> arr = retrieveItems(strToEnum(key));
-            for (int i = 0; i < arr.size(); ++i)
-            {
-                FindObject(arr[i].Name)->Restock(amount);
-            }
-        }
-    }
-
-    void manageProfits()
-    {
-        makeTable(sales);
-    }
-    void manageRot();
-
-    bool moveOntoNextDay()
-    {
-        std::cout << "Do you want to continue? (y/n): ";
-        char choice;
-        std::cin >> choice;
-        if (choice == 'n')
-        {
-            // int n = static_cast<int>(Category::total); // Its being used multiple times --> have added a separate member of class to keep track of current sales index
-            int saleForTheDay = sales[currentSales];
-            if (saleForTheDay < 0)
-            {
-                std::cout << "You have made a loss of " << -saleForTheDay << " total.\n";
-            }
-            else if (saleForTheDay > 0)
-            {
-                std::cout << "You have made a profit of " << saleForTheDay << " total.\n";
-            }
-            else
-            {
-                std::cout << "Congratulations!! You have gotten absolutely nothing!!\n";
-            }
-            return false;
-        }
-        else if (choice == 'y')
-        {
-            // currentDate + 1; -> this won't update the value of currentDate
-            currentDate = currentDate + 1;
-            currentSales++;
-            // setting up sales for the next day
-            sales.push_back(0);
-            manageRot();
-        }
-    }
-};
+//<-------------------------- End of declarations --------------------------------------->
 
 int main()
 {
