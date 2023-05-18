@@ -46,6 +46,7 @@ public:
     void makeTable(std::vector<Items> vec);
     void makeTable(std::vector<Perish> vec);
     void makeTable(std::vector<int> vec);
+    void manageSales();
     void Inventory();
     void handleRestock();
     void manageProfits();
@@ -188,7 +189,7 @@ public:
         this->price = price;
         this->Quantity = Quantity;
     }
-    int Sales(int units)
+    virtual int Sales(int units)
     {
         if (Quantity < units)
         {
@@ -510,6 +511,28 @@ void Storage::makeTable(std::vector<int> vec)
     }
     std::cout << t << std::endl;
 }
+void Storage::manageSales()
+{
+    int n,qty;
+    std::string name;
+    std::cout << "Enter the number(types not quantity) of items sold: ";
+    std::cin >> n;
+
+    for(int i = 0; i< n; ++i)
+    {
+        std::cout << "Enter the name of the item: ";
+        std::cin >> name;
+        std::cout << "Enter quantity of '" << name << "' sold: ";
+        std::cin >> qty;
+        
+        Items* ptr = FindObject(name);
+        if(ptr)
+            ptr->Sales(qty);
+        else 
+            std::cout << "No item Found with that name.\n";
+
+    }
+}
 void Storage::Inventory()
 {
     // function to print out categorywise profits
@@ -603,6 +626,12 @@ bool Storage::moveOntoNextDay()
         // setting up sales for the next day
         sales.push_back(0);
         manageRot();
+        return true;
+    }
+    else
+    {
+        std::cout << "Invalid Input\n";
+        return true;
     }
 }
 
@@ -623,7 +652,8 @@ int main()
     //5) Add Item to Inventory -- driver.handleAddItems()
     //6) Move onto Next day    -- driver.moveOntoNextDay()
 
-    
+    driver.Inventory();
+    driver.manageSales();
     driver.Inventory();
     std::cout << "___________________________________________\n";
     driver.manageProfits();
