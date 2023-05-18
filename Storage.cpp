@@ -188,6 +188,20 @@ public:
         this->price = price;
         this->Quantity = Quantity;
     }
+    int Sales(int units)
+    {
+        if (Quantity < units)
+        {
+            return 0;
+        }
+        Quantity -= units;
+        driver.sales[driver.currentSales] += units * price;
+        if (Quantity < 10)
+        {
+            std::cout << Name << " running low!! restock suggested!!" << std::endl;
+        }
+        return 1;
+    }
     void Restock(int quantity)
     {
         Quantity += quantity;
@@ -210,6 +224,40 @@ public:
         Lifetime = life;
         dateOfManufacture.push_back(date);
         batchQuantity.push_back(quantity);
+        Quantity += quantity;
+    }
+    int Sales(int units)
+    {
+        int tempUnits = units;
+        std::vector<int> tempBatchQuantity = batchQuantity;
+        while (true)
+        {
+            if (!tempBatchQuantity.size())
+            {
+                return 0;
+            }
+            if (tempUnits >= tempBatchQuantity[0])
+            {
+                tempUnits -= tempBatchQuantity[0];
+                tempBatchQuantity.erase(tempBatchQuantity.begin());
+            }
+            else
+            {
+                tempBatchQuantity[0] -= tempUnits;
+                tempUnits = 0;
+            }
+            if (!tempUnits)
+            {
+                batchQuantity = tempBatchQuantity;
+                driver.sales[driver.currentSales] += units * price;
+                Quantity -= units;
+                if (Quantity < 10)
+                {
+                    std::cout << Name << " running low!! restock suggested!!" << std::endl;
+                }
+                return 1;
+            }
+        }
     }
     void Restock(int quantity)
     {
@@ -236,8 +284,9 @@ public:
         }
         return {perished, rottingTomorrow};
     }
-    void display(){
-        std::cout<<Name<<std::endl;
+    void display()
+    {
+        std::cout << Name << std::endl;
     }
     friend Storage;
 };
@@ -509,7 +558,7 @@ void Storage::manageRot()
     int perished = 0;
     int rottingTomorrow = 0;
 
-    for (int i = 0; i<perish.size(); i++)
+    for (int i = 0; i < perish.size(); i++)
     {
         perished += perish[i].updateRot().first;
         rottingTomorrow += perish[i].updateRot().second;
@@ -578,17 +627,5 @@ int main()
     driver.Inventory();
     std::cout << "___________________________________________\n";
     driver.manageProfits();
-    // make date private again
-    driver.moveOntoNextDay();
-    driver.Inventory();
-    driver.currentDate.display();
-    driver.moveOntoNextDay();
-    driver.Inventory();
-    driver.currentDate.display();
-    driver.moveOntoNextDay();
-    driver.Inventory();
-    driver.currentDate.display();
-    driver.moveOntoNextDay();
-    driver.Inventory();
-    driver.currentDate.display();
+    
 }
