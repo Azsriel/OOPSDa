@@ -39,6 +39,7 @@ class Storage
 public:
     Date currentDate;
     void AddItems(Category category, std::string name, int price, bool Perishable);
+    void handleAddItems();
     Storage();
     Items *FindObject(std::string key);
     std::vector<Items> retrieveItems(Category cat);
@@ -316,6 +317,34 @@ void Storage::AddItems(Category category, std::string name, int price, bool Peri
         perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 2, currentDate));
     }
 }
+
+void Storage::handleAddItems()
+{
+    std::string cat,name;
+    int price;
+    char choice;
+    bool isPerish;
+    std::cout << "Enter Category that Item belongs to: ";
+    std::cin >> std::ws >> cat;
+
+    std::cout << "Enter Name of Item(One word): ";
+    std::cin >> std::ws >> name;
+
+    std::cout << "Enter Price of the Item: ";
+    std::cin >> price;
+
+    std::cout << "Is a/an " << name << " perishable?(y/n): ";
+    std::cin >> choice;
+
+    if(choice == 'y')
+        isPerish = true;
+    else if (choice == 'n')
+        isPerish = false;
+
+    AddItems(strToEnum(cat),name,price,isPerish);
+
+
+}
 Storage::Storage()
 {
     currentDate = Date(getRandomNumber(1, 30), getRandomNumber(1, 12), getRandomNumber(2000, 2020));
@@ -535,6 +564,17 @@ int main()
     // // Seed rng Generator with system Clock and discard first value
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     std::rand();
+
+    //Begin Menu Based Code Here
+    //User Inputs:
+    //1) Customer Sales        -- driver.manageSales()
+    //2) See Inventory         -- driver.Inventory()
+    //3) Restock               -- driver.handleRestock()
+    //4) Calculate Profits     -- driver.manageProfits()
+    //5) Add Item to Inventory -- driver.handleAddItems()
+    //6) Move onto Next day    -- driver.moveOntoNextDay()
+
+    
     driver.Inventory();
     std::cout << "___________________________________________\n";
     driver.manageProfits();
