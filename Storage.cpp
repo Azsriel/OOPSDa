@@ -651,6 +651,42 @@ int main()
     //4) Calculate Profits     -- driver.manageProfits()
     //5) Add Item to Inventory -- driver.handleAddItems()
     //6) Move onto Next day    -- driver.moveOntoNextDay()
+    while(true){
+        std::cout<<"\nMain Menu:"<<std::endl;
+        std::cout<<"1) Customer Sales"<<std::endl;
+        std::cout<<"2) See Inventory"<<std::endl;
+        std::cout<<"3) Restock"<<std::endl;
+        std::cout<<"4) Calculate Profits"<<std::endl;
+        std::cout<<"5) Add Item to Inventory"<<std::endl;
+        std::cout<<"6) Move onto Next day"<<std::endl;
+        std::cout<<"Enter choice :"<<std::endl;
+        int choice;
+        std::cin>>choice;
+        switch(choice){
+        case 1:
+            driver.manageSales();
+            break;
+        case 2:
+            driver.Inventory();
+            break;
+        case 3:
+            driver.handleRestock();
+            break;
+        case 4:
+            driver.manageProfits();
+            break;
+        case 5:
+            driver.handleAddItems();
+            break;
+        case 6:
+            driver.moveOntoNextDay();
+            break;
+        default:
+            std::cout<<"Invalid input , kindly enter number from 1 to 6."<<std::endl;
+            break;
+        }
+    }
+
 
     driver.Inventory();
     driver.manageSales();
