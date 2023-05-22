@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <limits>
 #include <vector>
 #include "TextTable.h"
 
@@ -212,7 +213,7 @@ public:
         }
         return 1;
     }
-    void Restock(int quantity)
+    virtual void Restock(int quantity)
     {
         Quantity += quantity;
         int cost = quantity * price;
@@ -234,7 +235,7 @@ public:
         Lifetime = life;
         dateOfManufacture.push_back(date);
         batchQuantity.push_back(quantity);
-        Quantity += quantity;
+        //Quantity += quantity; not needed because items already assigns quantity
     }
     int Sales(int units)
     {
@@ -295,6 +296,7 @@ public:
                 dateOfManufacture.erase(dateOfManufacture.begin() + i);
                 perished += batchQuantity[i];
                 batchQuantity.erase(batchQuantity.begin() + i);
+                Quantity -= perished;
             }
             else if (driver.currentDate - dateOfManufacture[i] == Lifetime)
             {
@@ -389,29 +391,58 @@ void Storage::AddItems(Category category, std::string name, int price, bool Peri
 void Storage::handleAddItems()
 {
     std::string cat,name;
-    int price;
+    int price = 0;
     char choice;
     bool isPerish;
+
     std::cout << "Enter Category that Item belongs to: ";
     std::cin >> std::ws >> cat;
+    while(strToEnum(cat) == Category::total)
+    {
+        std::cout << "Invalid Input. Please enter a valid Category: ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n     
+        std::cin >> cat;     
+    }
+    std::cin.ignore(1000, '\n');
 
     std::cout << "Enter Name of Item(One word): ";
     std::cin >> std::ws >> name;
+    std::cin.ignore(1000, '\n');
 
     std::cout << "Enter Price of the Item: ";
     std::cin >> price;
+    while(price <= 0)
+    {
+        std::cout << "Invalid Input. Please enter a positive price: ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n     
+        std::cin >> price;     
+    }
+    std::cin.ignore(1000, '\n');
+    
 
     std::cout << "Is a/an " << name << " perishable?(y/n): ";
     std::cin >> choice;
+    //Error handling
+    while (std::cin.fail() || choice != 'n' || choice != 'N' || choice != 'y' || choice != 'Y')
+    {
+        std::cout << "Invalid Input. Please enter only the characters 'y','Y','n' or 'N':  ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n
+        std::cin >> choice;
+    }
+    std::cin.ignore(1000, '\n');
 
-    if(choice == 'y')
+    if(choice == 'y' || choice == 'Y')
         isPerish = true;
-    else if (choice == 'n')
+    else if (choice == 'n' || choice == 'N');
         isPerish = false;
 
     AddItems(strToEnum(cat),name,price,isPerish);
-
-
 }
 Storage::Storage()
 {
@@ -498,10 +529,11 @@ void Storage::makeTable(std::vector<Perish> vec)
         t.add(vec[i].Name);
         t.add(std::to_string(vec[i].Quantity));
         t.add(std::to_string(vec[i].price));
-        t.add(std::to_string(vec[i].Lifetime));
+        t.add(std::to_string(vec[i].Lifetime) + " days");
         t.endOfRow();
 
-        if (vec[i].Lifetime - (currentDate - (vec[i].dateOfManufacture[0])) < 10)
+        
+        if (vec[i].Quantity > 0 && vec[i].Lifetime - (currentDate - (vec[i].dateOfManufacture[0])) < 10)
         {
             warning.push_back(vec[i].Name);
         }
@@ -531,24 +563,58 @@ void Storage::makeTable(std::vector<int> vec)
 }
 void Storage::manageSales()
 {
-    int n,qty;
+    int n = 0;
+    int qty = 0;
     std::string name;
     std::cout << "Enter the number(types not quantity) of items sold: ";
     std::cin >> n;
+    while (n <= 0)
+    {
+        std::cout << "Invalid Input.Please enter a valid positive Number: ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n
+        std::cin >> n;
+    }
+    std::cin.ignore(1000, '\n');
 
     for(int i = 0; i< n; ++i)
     {
         std::cout << "Enter the name of the item: ";
         std::cin >> name;
+        Items* ptr = FindObject(name);
+        while(!ptr)
+        {
+            std::cout << "Invalid Input. Please enter valid Item name: ";
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            //Clears console buffer till \n     
+            std::cin >> name;
+            ptr = FindObject(name);
+        }
+        std::cin.ignore(1000, '\n');
+
         std::cout << "Enter quantity of '" << name << "' sold: ";
         std::cin >> qty;
-        
-        Items* ptr = FindObject(name);
-        if(ptr)
-            ptr->Sales(qty);
-        else 
-            std::cout << "No item Found with that name.\n";
+        while (qty <= 0 || qty > ptr->Quantity)
+        {
+            if(qty > ptr->Quantity)
+            {
+                std::cout << "Invalid Input. Quantity entered is greater than existing amount.\n";
+                std::cout << "Please enter a valid quantity: ";          
+            }
+            else
+            {
+                std::cout << "Invalid Input. Please enter a valid Positive quantity: ";
+            }
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            //Clears console buffer till \n     
+            std::cin >> qty;     
+        }
+        std::cin.ignore(1000, '\n');
 
+        ptr->Sales(qty);
     }
 }
 void Storage::Inventory()
@@ -565,20 +631,53 @@ void Storage::Inventory()
 void Storage::handleRestock()
 {
     int amount;
-    std::cin >> std::ws >> amount;
+    std::cout << "Enter amount needed to restock: ";
+    std::cin >> amount;
+    while(amount <= 0)  
+    {  
+        std::cout << "Invalid Input. Please enter a valid Positive quantity: ";  
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n     
+        std::cin >> amount;
+    }
+    std::cin.ignore(1000, '\n');
+
 
     std::cout << "Do you want to restock a full category or only one item?(c/i) ";
     char choice;
     std::cin >> choice;
+    //Error handling
+    while (choice != 'i' && choice != 'I' && choice != 'c' && choice != 'C')
+    {
+        std::cout << "Invalid Input. Please enter only the characters 'i','I','c' or 'C':  ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n
+        std::cin >> choice;
+    }
+    std::cin.ignore(1000, '\n');
 
-    if (choice == 'i')
+    if (choice == 'i' || choice == 'I')
     {
         std::cout << "Enter Name of object (Case Sensitive): ";
         std::string key;
-        std::cin >> key >> std::ws;
-        FindObject(key)->Restock(amount);
+        std::cin >> key;
+        Items* ptr = FindObject(key);
+        while(!ptr)
+        {
+            std::cout << "Invalid Input. Please enter valid Item name: ";
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            //Clears console buffer till \n
+            std::cin >> key;
+            ptr = FindObject(key);
+        }
+        std::cin.ignore(1000, '\n');
+
+        ptr->Restock(amount);
     }
-    else if (choice == 'c')
+    else if (choice == 'c' || choice == 'C')
     {
         std::cout << "Enter name of Category: ";
         std::string key;
@@ -589,6 +688,7 @@ void Storage::handleRestock()
             FindObject(arr[i].Name)->Restock(amount);
         }
     }
+    //No else required
 }
 void Storage::manageProfits()
 {
@@ -618,7 +718,18 @@ bool Storage::moveOntoNextDay()
     std::cout << "Do you want to continue? (y/n): ";
     char choice;
     std::cin >> choice;
-    if (choice == 'n')
+    //Error handling
+    while (choice != 'n' && choice != 'N' && choice != 'y' && choice != 'Y')
+    {
+        std::cout << "Invalid Input. Please enter only the characters 'y','Y','n' or 'N':  ";
+        std::cin.clear();
+        std::cin.ignore(1000, '\n');
+        //Clears console buffer till \n
+        std::cin >> choice;
+    }
+    std::cin.ignore(1000, '\n');
+
+    if (choice == 'n' || choice == 'N')
     {
         // int n = static_cast<int>(Category::total); // Its being used multiple times --> have added a separate member of class to keep track of current sales index
         int saleForTheDay = sales[currentSales];
@@ -634,23 +745,20 @@ bool Storage::moveOntoNextDay()
         {
             std::cout << "Congratulations!! You have gotten absolutely nothing!!\n";
         }
-        return false;
+        return true;
     }
-    else if (choice == 'y')
+    else if (choice == 'y' || choice == 'Y')
     {
-        // currentDate + 1; -> this won't update the value of currentDate
         currentDate = currentDate + 1;
         currentSales++;
         // setting up sales for the next day
         sales.push_back(0);
         manageRot();
-        return true;
+        return false;
     }
-    else
-    {
-        std::cout << "Invalid Input\n";
-        return true;
-    }
+    //not needed but warnings are treated as errors
+    return false;
+    
 }
 
 //<-------------------------- End of declarations --------------------------------------->
@@ -661,19 +769,40 @@ int main()
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     std::rand();
 
-    //Begin Menu Based Code Here
-    //User Inputs:
-    //1) Customer Sales        -- driver.manageSales()
-    //2) See Inventory         -- driver.Inventory()
-    //3) Restock               -- driver.handleRestock()
-    //4) Calculate Profits     -- driver.manageProfits()
-    //5) Add Item to Inventory -- driver.handleAddItems()
-    //6) Move onto Next day    -- driver.moveOntoNextDay()
-
-    driver.Inventory();
-    driver.manageSales();
-    driver.Inventory();
-    std::cout << "___________________________________________\n";
-    driver.manageProfits();
-    
+    bool completed = false;
+    while(!completed){
+        std::cout<<"\nMain Menu:"<<std::endl;
+        std::cout<<"1) Customer Sales"<<std::endl;
+        std::cout<<"2) See Inventory"<<std::endl;
+        std::cout<<"3) Restock"<<std::endl;
+        std::cout<<"4) Calculate Profits"<<std::endl;
+        std::cout<<"5) Add Item to Inventory"<<std::endl;
+        std::cout<<"6) Move onto Next day"<<std::endl;
+        std::cout<<"Enter choice :"<<std::endl;
+        int choice;
+        std::cin>>choice;
+        switch(choice){
+        case 1:
+            driver.manageSales();
+            break;
+        case 2:
+            driver.Inventory();
+            break;
+        case 3:
+            driver.handleRestock();
+            break;
+        case 4:
+            driver.manageProfits();
+            break;
+        case 5:
+            driver.handleAddItems();
+            break;
+        case 6:
+            completed = driver.moveOntoNextDay();
+            break;
+        default:
+            std::cout<<"Invalid input , kindly enter number from 1 to 6."<<std::endl;
+            break;
+        }
+    }  
 }
