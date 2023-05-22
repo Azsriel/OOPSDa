@@ -26,6 +26,8 @@ public:
     void display();
     friend Date convertToDate(int);
     friend Date operator+(Date, int);
+    friend int operator==(Date, Date);
+    friend int operator!=(Date, Date);
 };
 Date convertToDate(int);
 class Storage
@@ -124,6 +126,12 @@ Date operator+(Date d, int n)
     d3 = convertToDate(d.convertToDays() + n);
     return d3;
 }
+int operator == (Date d1, Date d2){
+    return (d1.day == d2.day) && (d1.month == d2.month) && (d1.year == d2.year);
+}
+int operator != (Date d1, Date d2){
+    return !(d1==d2);
+}
 Date convertToDate(int days)
 {
     Date d;
@@ -173,6 +181,7 @@ Date convertToDate(int days)
     }
     return d;
 }
+
 //<-------------------------- End of declarations --------------------------------------->
 class Items
 {
@@ -232,6 +241,7 @@ public:
     {
         int tempUnits = units;
         std::vector<int> tempBatchQuantity = batchQuantity;
+        std::vector<Date> tempDateOfManufacture = dateOfManufacture;
         while (true)
         {
             if (!tempBatchQuantity.size())
@@ -242,6 +252,7 @@ public:
             {
                 tempUnits -= tempBatchQuantity[0];
                 tempBatchQuantity.erase(tempBatchQuantity.begin());
+                tempDateOfManufacture.erase(tempDateOfManufacture.begin());
             }
             else
             {
@@ -251,6 +262,7 @@ public:
             if (!tempUnits)
             {
                 batchQuantity = tempBatchQuantity;
+                dateOfManufacture = tempDateOfManufacture;
                 driver.sales[driver.currentSales] += units * price;
                 Quantity -= units;
                 if (Quantity < 10)
@@ -265,7 +277,13 @@ public:
     {
         Quantity += quantity;
         driver.sales[driver.currentSales] -= quantity * price;
-        batchQuantity.push_back(quantity);
+        if(dateOfManufacture[dateOfManufacture.size() - 1]!= driver.currentDate){
+            dateOfManufacture.push_back(driver.currentDate);
+            batchQuantity.push_back(quantity);
+        }
+        else{
+            batchQuantity[batchQuantity.size()-1]+=quantity;
+        }
     }
     std::pair<int, int> updateRot()
     {
