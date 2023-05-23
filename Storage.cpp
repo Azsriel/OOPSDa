@@ -715,7 +715,7 @@ void Storage::manageRot()
 }
 bool Storage::moveOntoNextDay()
 {
-    std::cout << "Do you want to continue? (y/n): ";
+    std::cout << "Do you want to move onto the next day? (y/n): ";
     char choice;
     std::cin >> choice;
     //Error handling
