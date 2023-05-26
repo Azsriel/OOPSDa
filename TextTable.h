@@ -1,3 +1,6 @@
+//Code by haarcuba
+//https://github.com/haarcuba/cpp-text-table
+
 #pragma once
 
 #include <iomanip>
