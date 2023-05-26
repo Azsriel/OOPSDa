@@ -36,6 +36,7 @@ class Storage
     std::vector<Perish> perish;
     std::vector<int> sales;
     int currentSales = 0;
+    int totalSales = 0;
     friend Items;
     friend Perish;
 
@@ -729,22 +730,27 @@ bool Storage::moveOntoNextDay()
     }
     std::cin.ignore(1000, '\n');
 
+    totalSales += sales[currentSales];
+
     if (choice == 'n' || choice == 'N')
     {
         // int n = static_cast<int>(Category::total); // Its being used multiple times --> have added a separate member of class to keep track of current sales index
-        int saleForTheDay = sales[currentSales];
-        if (saleForTheDay < 0)
+        //int saleForTheDay = sales[currentSales]; //Changing to totalSales
+        if (totalSales < 0)
         {
-            std::cout << "You have made a loss of " << -saleForTheDay << " total.\n";
+            std::cout << "You have made a loss of " << -totalSales << " total.\n";
         }
-        else if (saleForTheDay > 0)
+        else if (totalSales > 0)
         {
-            std::cout << "You have made a profit of " << saleForTheDay << " total.\n";
+            std::cout << "You have made a profit of " << totalSales << " total.\n";
         }
         else
         {
             std::cout << "Congratulations!! You have gotten absolutely nothing!!\n";
         }
+        std::cout << "Press any character and press enter to quit\n";
+        char random;
+        std::cin >> random;
         return true;
     }
     else if (choice == 'y' || choice == 'Y')
