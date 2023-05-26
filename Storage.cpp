@@ -35,6 +35,7 @@ class Storage
     std::vector<Items> items;
     std::vector<Perish> perish;
     std::vector<int> sales;
+    std::vector<int> salesPerCat; //Added 
     int currentSales = 0;
     int totalSales = 0;
     friend Items;
@@ -42,7 +43,7 @@ class Storage
 
 public:
     Date currentDate;
-    void AddItems(Category category, std::string name, int price, bool Perishable);
+    void AddItems(Category category, std::string name, int price, bool Perishable,int quantity);
     void handleAddItems();
     Storage();
     Items *FindObject(std::string key);
@@ -208,6 +209,7 @@ public:
         }
         Quantity -= units;
         driver.sales[driver.currentSales] += units * price;
+        driver.salesPerCat[static_cast<int>(cat)] += units * price; //Added
         if (Quantity < 10)
         {
             std::cout << Name << " running low!! restock suggested!!" << std::endl;
@@ -219,6 +221,7 @@ public:
         Quantity += quantity;
         int cost = quantity * price;
         driver.sales[driver.currentSales] -= cost;
+        driver.salesPerCat[static_cast<int>(cat)] -= cost; //Added
     }
     friend Storage;
 };
@@ -265,6 +268,7 @@ public:
                 batchQuantity = tempBatchQuantity;
                 dateOfManufacture = tempDateOfManufacture;
                 driver.sales[driver.currentSales] += units * price;
+                driver.salesPerCat[static_cast<int>(cat)] += units * price; //Added
                 Quantity -= units;
                 if (Quantity < 10)
                 {
@@ -278,6 +282,7 @@ public:
     {
         Quantity += quantity;
         driver.sales[driver.currentSales] -= quantity * price;
+        driver.salesPerCat[static_cast<int>(cat)] -= quantity * price; //Added
         if(dateOfManufacture[dateOfManufacture.size() - 1]!= driver.currentDate){
             dateOfManufacture.push_back(driver.currentDate);
             batchQuantity.push_back(quantity);
@@ -375,17 +380,17 @@ int getRandomNumber(int min, int max)
     // Evenly distributes random number across the range
     return min + static_cast<int>((max - min + 1) * (std::rand() * fraction));
 }
-void Storage::AddItems(Category category, std::string name, int price, bool Perishable)
+void Storage::AddItems(Category category, std::string name, int price, bool Perishable, int quantity)
 {
     // Method to Add Item to Vectors
 
     if (!Perishable)
     {
-        items.push_back(Items(category, name, price, getRandomNumber(30, 50)));
+        items.push_back(Items(category, name, price, quantity));
     }
     else
     {
-        perish.push_back(Perish(category, name, price, getRandomNumber(10, 30), 2, currentDate));
+        perish.push_back(Perish(category, name, price, quantity, 2, currentDate));
     }
 }
 
@@ -428,7 +433,7 @@ void Storage::handleAddItems()
     std::cout << "Is a/an " << name << " perishable?(y/n): ";
     std::cin >> choice;
     //Error handling
-    while (std::cin.fail() || choice != 'n' || choice != 'N' || choice != 'y' || choice != 'Y')
+    while (choice != 'n' && choice != 'N' && choice != 'y' && choice != 'Y')
     {
         std::cout << "Invalid Input. Please enter only the characters 'y','Y','n' or 'N':  ";
         std::cin.clear();
@@ -443,28 +448,29 @@ void Storage::handleAddItems()
     else if (choice == 'n' || choice == 'N');
         isPerish = false;
 
-    AddItems(strToEnum(cat),name,price,isPerish);
+    AddItems(strToEnum(cat),name,price,isPerish,0);
 }
 Storage::Storage()
 {
     currentDate = Date(getRandomNumber(1, 30), getRandomNumber(1, 12), getRandomNumber(2000, 2020));
-    AddItems(Category::consumables, "Apples", 50, true);
-    AddItems(Category::utensils, "Knifes", 150, false);
-    AddItems(Category::entertainment, "Rubber_Balls", 150, false);
-    AddItems(Category::clothes, "Shirts", 150, false);
-    AddItems(Category::households, "Buckets", 150, false);
-    AddItems(Category::consumables, "Tomatoes", 150, true);
-    AddItems(Category::utensils, "Spoons", 150, false);
-    AddItems(Category::entertainment, "Toy_Guns", 150, false);
-    AddItems(Category::clothes, "Pants", 150, false);
-    AddItems(Category::households, "Towels", 150, false);
-    AddItems(Category::consumables, "Carrots", 150, true);
-    AddItems(Category::utensils, "Forks", 150, false);
-    AddItems(Category::entertainment, "Masks", 150, false);
-    AddItems(Category::clothes, "Suits", 150, false);
-    AddItems(Category::households, "Bottles", 150, false);
+    AddItems(Category::consumables, "Apples", 50, true,getRandomNumber(30, 50));
+    AddItems(Category::utensils, "Knifes", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::entertainment, "Rubber_Balls", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::clothes, "Shirts", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::households, "Buckets", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::consumables, "Tomatoes", 150, true,getRandomNumber(30, 50));
+    AddItems(Category::utensils, "Spoons", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::entertainment, "Toy_Guns", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::clothes, "Pants", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::households, "Towels", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::consumables, "Carrots", 150, true,getRandomNumber(30, 50));
+    AddItems(Category::utensils, "Forks", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::entertainment, "Masks", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::clothes, "Suits", 150, false,getRandomNumber(30, 50));
+    AddItems(Category::households, "Bottles", 150, false,getRandomNumber(30, 50));
 
-    sales.resize(static_cast<std::size_t>(Category::total));
+    salesPerCat.resize(static_cast<std::size_t>(Category::total));
+    sales.resize(1);
 }
 Items *Storage::FindObject(std::string key)
 {
@@ -684,16 +690,34 @@ void Storage::handleRestock()
         std::string key;
         std::cin >> key;
         std::vector<Items> arr = retrieveItems(strToEnum(key));
-        for (int i = 0; i < arr.size(); ++i)
+        while(arr.size() == 0 && key != "Consumables")
         {
-            FindObject(arr[i].Name)->Restock(amount);
+            std::cout << "Invalid Input. Please enter valid Category name: ";
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            //Clears console buffer till \n
+            std::cin >> key;
+        }
+        if(key == "Consumables")
+        {
+            for(int i = 0; i < perish.size(); ++i)
+            {
+                perish[i].Restock(amount);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < arr.size(); ++i)
+            {
+                FindObject(arr[i].Name)->Restock(amount);
+            }
         }
     }
     //No else required
 }
 void Storage::manageProfits()
 {
-    makeTable(sales);
+    makeTable(salesPerCat);
 }
 void Storage::manageRot()
 {
@@ -808,6 +832,9 @@ int main()
             break;
         default:
             std::cout<<"Invalid input , kindly enter number from 1 to 6."<<std::endl;
+            std::cin.clear();
+            std::cin.ignore(1000, '\n');
+            //Clears console buffer till \n
             break;
         }
     }  
