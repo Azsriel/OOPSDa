@@ -587,8 +587,10 @@ void Storage::manageSales()
 
     for(int i = 0; i< n; ++i)
     {
-        std::cout << "Enter the name of the item: ";
+        std::cout << "Enter the name of the item(q to quit): ";
         std::cin >> name;
+        if(name == "q")
+            break;
         Items* ptr = FindObject(name);
         while(!ptr)
         {
@@ -801,7 +803,8 @@ int main()
 
     bool completed = false;
     while(!completed){
-        std::cout<<"\nMain Menu:"<<std::endl;
+        std::cout<<"---------------------------------------------------------\n";
+        std::cout<<"Main Menu:"<<std::endl;
         std::cout<<"1) Customer Sales"<<std::endl;
         std::cout<<"2) See Inventory"<<std::endl;
         std::cout<<"3) Restock"<<std::endl;
